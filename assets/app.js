@@ -496,7 +496,12 @@
     bind();
     syncControls();
 
-    fetch(MANIFEST_URL, { cache: 'no-cache' })
+    // GitHub Pages serves the manifest with Cache-Control: max-age=600 and we
+    // cannot change that, so Fastly would hide a new edition for up to ten
+    // minutes. Fastly keys its cache on the full URL, so a per-minute query
+    // string makes each new minute a cache miss — a new edition shows up within
+    // a minute, while repeat views inside the same minute still hit cache.
+    fetch(MANIFEST_URL + '?m=' + Math.floor(Date.now() / 60000), { cache: 'no-cache' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
