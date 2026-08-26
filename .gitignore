@@ -10,3 +10,7 @@ Thumbs.db
 
 # local preview samples - never publish these
 epapers/_sample-*.pdf
+
+# clasp (Apps Script CLI) - contains scriptId, local only
+.clasp.json
+.clasprc.json

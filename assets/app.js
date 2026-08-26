@@ -32,7 +32,7 @@
     prev: $('prevPage'), next: $('nextPage'), pageInput: $('pageInput'), pageCount: $('pageCount'),
     edgePrev: $('edgePrev'), edgeNext: $('edgeNext'),
     zoomIn: $('zoomIn'), zoomOut: $('zoomOut'), zoomLabel: $('zoomLabel'), fitWidth: $('fitWidth'),
-    fullscreen: $('fullscreen'), download: $('downloadBtn'),
+    fullscreen: $('fullscreen'),
     grid: $('editionGrid'), loadMore: $('loadMore'),
     stamp: $('todayStamp'), year: $('year')
   };
@@ -222,9 +222,6 @@
 
     document.title = (isToday(ed.date) ? 'आज का ePaper' : hiDate(ed.date, false) + ' का ePaper') +
                      ' — जनतरंग पथदूत | Jantarang Pathdoot ePaper';
-    els.download.href = ed.file;
-    els.download.setAttribute('download', 'Jantarang-Pathdoot-' + ed.date + '.pdf');
-    els.download.removeAttribute('aria-disabled');
 
     markActiveCard(ed.date);
     setStatus('ई-पेपर लोड हो रहा है…', 'Loading edition ' + enDate(ed.date), true);
@@ -245,7 +242,7 @@
         console.error('[epaper] could not open PDF', err);
         setStatus(
           'यह ePaper खोला नहीं जा सका। कृपया कुछ देर बाद पुनः प्रयास करें।',
-          'This edition could not be opened. Try refreshing, or download the PDF directly.',
+          'This edition could not be opened. Please refresh and try again.',
           false
         );
         unlockThumbs();   // don't strand the archive because the main edition failed
@@ -523,8 +520,6 @@
         } else {
           els.title.textContent = 'कोई ePaper उपलब्ध नहीं';
           els.date.textContent = 'No edition published yet';
-          els.download.setAttribute('aria-disabled', 'true');
-          els.download.removeAttribute('href');
           setStatus(
             'अभी कोई ePaper प्रकाशित नहीं हुआ है।',
             'No edition has been published yet. The latest edition will appear here automatically once uploaded.',

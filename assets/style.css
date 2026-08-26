@@ -122,24 +122,24 @@ a { color: var(--accent-dk); }
 
 .masthead { background: var(--paper-2); border-bottom: 1px solid var(--rule); }
 
-.masthead-inner { text-align: center; padding-block: 24px 16px; }
+.masthead-inner { text-align: center; padding-block: 14px 10px; }
 
 .wordmark { margin: 0; line-height: 0; }
 
 .wordmark img {
   width: auto;
   height: auto;
-  max-width: min(560px, 100%);
+  max-width: min(340px, 82%);
   display: inline-block;
 }
 
 .tagline {
   display: flex; align-items: center; justify-content: center;
-  flex-wrap: wrap; gap: 8px;
-  margin: 14px 0 0;
-  font-size: .72rem;
+  flex-wrap: wrap; gap: 7px;
+  margin: 8px 0 0;
+  font-size: .66rem;
   font-weight: 600;
-  letter-spacing: .14em;
+  letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
@@ -536,8 +536,9 @@ a { color: var(--accent-dk); }
 }
 
 @media (max-width: 720px) {
-  .wordmark img { max-width: min(340px, 88%); }
-  .tagline { font-size: .64rem; gap: 6px; }
+  .masthead-inner { padding-block: 10px 8px; }
+  .wordmark img { max-width: min(220px, 72%); }
+  .tagline { font-size: .58rem; gap: 5px; margin-top: 6px; letter-spacing: .08em; }
   .footer-inner { flex-direction: column; }
   .foot-right { text-align: left; }
   .viewer-head { align-items: stretch; }
