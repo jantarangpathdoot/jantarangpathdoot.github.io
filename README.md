@@ -48,7 +48,8 @@ epapers/                Published PDFs (last 30 days only)
 apps-script/Code.gs     Timed Drive ➜ GitHub sync + 30-day retention
 apps-script/UploadServer.gs  Upload page back end (publish, replace, unpublish)
 apps-script/Upload.html      Upload page UI
-apps-script/FormSetup.gs     Google Form helper (createUploadForm)
+apps-script-optional/FormSetup.gs  Google Form helper - NOT pushed (needs the
+                             restricted auth/forms scope)
 apps-script/appsscript.json
 .nojekyll               Serve files as-is, no Jekyll processing
 ```

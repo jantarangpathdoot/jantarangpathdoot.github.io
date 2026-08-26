@@ -79,14 +79,13 @@ Drive folder in use: <https://drive.google.com/drive/folders/1-fZ1mgUNIcjjdwlTQu
 
 ## 2. The Apps Script project — already done ✅
 
-Created and pushed with `clasp`. Five files are live in the project:
+Created and pushed with `clasp`. Four files are live in the project:
 
 | File | What it does |
 |---|---|
 | `Code.gs` | timed Drive ➜ GitHub sync + 30-day retention |
 | `UploadServer.gs` | upload page back end (publish / replace / unpublish) |
 | `Upload.html` | upload page UI |
-| `FormSetup.gs` | `createUploadForm()`, `attachFormTrigger()` |
 | `appsscript.json` | manifest — scopes, timezone, web app config |
 
 > `UploadServer.gs` is named that, not `Upload.gs`, because Apps Script requires
