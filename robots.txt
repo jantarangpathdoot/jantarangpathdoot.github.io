@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /upload
 
 Sitemap: https://jantarangpathdoot.github.io/sitemap.xml
