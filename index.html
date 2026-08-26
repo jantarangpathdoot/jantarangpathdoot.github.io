@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>जनतरंग पथदूत e-Paper | Jantarang Pathdoot</title>
+<meta name="description" content="जनतरंग पथदूत — हिंदी दैनिक समाचार पत्र, रांची एवं पलामू, झारखंड। आज का अंक और पिछले एक माह के अंक ऑनलाइन पढ़ें। Read the daily Jantarang Pathdoot e-paper online.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/logo-jp.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="जनतरंग पथदूत e-Paper · निष्पक्ष खबरें, सही राह">
+<meta property="og:description" content="हिंदी दैनिक समाचार पत्र — रांची एवं पलामू, झारखंड। आज का अंक और पिछले एक माह के अंक ऑनलाइन पढ़ें।">
+<meta property="og:url" content="https://jantarangpathdoot.github.io/">
+<meta property="og:image" content="https://jantarangpathdoot.github.io/assets/logo-jp.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<a class="skip-link" href="#viewer">मुख्य सामग्री पर जाएँ / Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <h1 class="wordmark">
+      <img src="assets/logo-jp.png" width="1200" height="351"
+           alt="जनतरंग पथदूत — निष्पक्ष खबरें, सही राह">
+    </h1>
+    <p class="tagline">
+      <span>हिंदी दैनिक समाचार पत्र</span>
+      <span class="dot" aria-hidden="true">&middot;</span>
+      <span>e&#8209;Paper</span>
+      <span class="dot" aria-hidden="true">&middot;</span>
+      <span class="prgi">PRGI Reg. No. JHHIN/26/A6391</span>
+    </p>
+  </div>
+  <div class="rule" aria-hidden="true"></div>
+  <nav class="subnav" aria-label="Section navigation">
+    <div class="wrap subnav-inner">
+      <span id="todayStamp" class="stamp"></span>
+      <ul>
+        <li><a href="#viewer">आज का अंक</a></li>
+        <li><a href="#archive">पुराने अंक</a></li>
+        <li><a href="#about">About Us</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ============ VIEWER ============ -->
+  <section id="viewer" class="viewer-section">
+    <div class="wrap">
+
+      <div class="viewer-head">
+        <div class="viewer-heading">
+          <h2 id="editionTitle">आज का अंक</h2>
+          <p id="editionDate" class="edition-date">लोड हो रहा है…</p>
+        </div>
+
+        <div class="toolbar" role="toolbar" aria-label="PDF viewer controls">
+          <div class="tool-group" role="group" aria-label="Page navigation">
+            <button id="prevPage" class="tbtn" title="Previous page" aria-label="Previous page">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <span class="pagebox">
+              <input id="pageInput" type="number" min="1" value="1" aria-label="Page number" inputmode="numeric">
+              <span class="pagesep">/</span>
+              <span id="pageCount">–</span>
+            </span>
+            <button id="nextPage" class="tbtn" title="Next page" aria-label="Next page">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div class="tool-group" role="group" aria-label="Zoom">
+            <button id="zoomOut" class="tbtn" title="Zoom out" aria-label="Zoom out">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M8 11h6M20 20l-4.6-4.6"/></svg>
+            </button>
+            <span id="zoomLabel" class="zoomlabel" aria-live="polite">Fit</span>
+            <button id="zoomIn" class="tbtn" title="Zoom in" aria-label="Zoom in">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M8 11h6M11 8v6M20 20l-4.6-4.6"/></svg>
+            </button>
+            <button id="fitWidth" class="tbtn" title="Fit to width" aria-label="Fit to width">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8v8M20 8v8M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>
+            </button>
+          </div>
+
+          <div class="tool-group" role="group" aria-label="Actions">
+            <button id="fullscreen" class="tbtn" title="Fullscreen" aria-label="Toggle fullscreen">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+            </button>
+            <a id="downloadBtn" class="tbtn tbtn-primary" href="#" download title="Download PDF">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 12l4 4 4-4M4 19h16"/></svg>
+              <span>Download</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div id="stage" class="stage">
+        <div id="canvasScroll" class="canvas-scroll">
+          <div id="canvasHolder" class="canvas-holder">
+            <canvas id="pdfCanvas"></canvas>
+          </div>
+        </div>
+
+        <button id="edgePrev" class="edge edge-prev" aria-label="Previous page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <button id="edgeNext" class="edge edge-next" aria-label="Next page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <div id="stageStatus" class="stage-status">
+          <div class="spinner" aria-hidden="true"></div>
+          <p>ई-पेपर लोड हो रहा है…</p>
+        </div>
+      </div>
+
+      <p class="viewer-hint">
+        <kbd>←</kbd> <kbd>→</kbd> से पन्ना बदलें &middot; Use arrow keys to turn pages
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ ARCHIVE ============ -->
+  <section id="archive" class="archive">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>पुराने अंक <span class="en">Recent Editions</span></h2>
+        <p class="sec-sub">पिछले एक माह के अंक — किसी भी अंक पर क्लिक करके ऊपर पढ़ें।</p>
+      </div>
+
+      <div id="editionGrid" class="grid" role="list"></div>
+
+      <div class="loadmore-row">
+        <button id="loadMore" class="btn-ghost" hidden>और अंक देखें &middot; Load more</button>
+      </div>
+
+      <aside class="archive-notice">
+        <div class="notice-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+        </div>
+        <div class="notice-body">
+          <h3>एक माह से पुराने अंक चाहिए?</h3>
+          <p>
+            इस वेबसाइट पर केवल पिछले <strong>30 दिनों</strong> के अंक उपलब्ध रहते हैं।
+            इससे पुराने सभी अंक हमारे संग्रह में सुरक्षित हैं — कृपया आवश्यक तिथि लिखकर हमें ईमेल करें,
+            हम अंक भेज देंगे।
+          </p>
+          <p class="en-para">
+            <em>Only the last 30 days of editions are kept on this site. Our full archive is preserved —
+            email us with the date you need and we will send it across.</em>
+          </p>
+          <a class="btn-mail" href="mailto:jantarangpathdoot@gmail.com?subject=%E0%A4%AA%E0%A5%81%E0%A4%B0%E0%A4%BE%E0%A4%A8%E0%A4%BE%20%E0%A4%85%E0%A4%82%E0%A4%95%20%E0%A4%9A%E0%A4%BE%E0%A4%B9%E0%A4%BF%E0%A4%8F%20%2F%20Request%20for%20past%20edition&amp;body=%E0%A4%A4%E0%A4%BF%E0%A4%A5%E0%A4%BF%20%2F%20Date%20(DD-MM-YYYY)%3A%20%0A%0A%E0%A4%A8%E0%A4%BE%E0%A4%AE%20%2F%20Name%3A%20%0A">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+            jantarangpathdoot@gmail.com
+          </a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="about" class="about">
+    <div class="wrap about-grid">
+      <div class="about-main">
+        <h2>हमारे बारे में <span class="en">About Us</span></h2>
+        <p class="lede">
+          <strong>जनतरंग पथदूत</strong> एक हिंदी दैनिक समाचार पत्र है, जो झारखंड के
+          रांची और पलामू क्षेत्र से प्रकाशित होता है। हमारा ध्येय वाक्य है —
+          <em>“निष्पक्ष खबरें, सही राह।”</em>
+        </p>
+        <p>
+          स्थानीय समाचार, जनहित के मुद्दे, प्रशासनिक गतिविधियाँ और क्षेत्रीय घटनाएँ —
+          हम हर खबर को बिना पक्षपात के, तथ्यों के साथ पाठकों तक पहुँचाते हैं। हमारा
+          विश्वास है कि सही सूचना ही सही निर्णय की पहली शर्त है।
+        </p>
+        <p>
+          इस वेबसाइट पर प्रतिदिन का अंक प्रकाशित होते ही उपलब्ध हो जाता है। आप इसे
+          यहीं पढ़ सकते हैं या PDF के रूप में निःशुल्क डाउनलोड कर सकते हैं।
+          पिछले <strong>30 दिनों</strong> के अंक हमेशा उपलब्ध रहते हैं।
+        </p>
+        <p class="en-para">
+          <em>Jantarang Pathdoot is a Hindi daily newspaper published from Ranchi and Palamu,
+          Jharkhand, registered with the Press Registrar General of India
+          (PRGI Reg. No. JHHIN/26/A6391). Every edition reaches this page on the day it goes to
+          print — free to read and free to download.</em>
+        </p>
+      </div>
+
+      <aside class="about-side">
+        <h3>संपर्क &middot; Contact</h3>
+        <dl class="contact">
+          <dt>ईमेल / Email</dt>
+          <dd><a href="mailto:jantarangpathdoot@gmail.com">jantarangpathdoot@gmail.com</a></dd>
+
+          <dt>रांची कार्यालय / Ranchi Office</dt>
+          <dd>प्लॉट 491, बिरसा चौक के पास, झकहरातांड़, रातू,<br>रांची, झारखंड — 835222</dd>
+
+          <dt>पलामू कार्यालय / Palamu Office</dt>
+          <dd>पंकी रोड, भवानीनगर, बरालोटा, मेदिनीनगर,<br>पलामू, झारखंड — 822102</dd>
+
+          <dt>पंजीयन / Registration</dt>
+          <dd>PRGI Reg. No. JHHIN/26/A6391</dd>
+        </dl>
+      </aside>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div class="foot-brand">
+      <p class="foot-mark">जनतरंग पथदूत</p>
+      <p class="foot-slogan">निष्पक्ष खबरें, सही राह</p>
+    </div>
+    <div class="foot-right">
+      <p class="foot-meta">रांची &middot; पलामू, झारखंड &nbsp;|&nbsp; PRGI Reg. No. JHHIN/26/A6391</p>
+      <p class="foot-meta">
+        <a href="mailto:jantarangpathdoot@gmail.com">jantarangpathdoot@gmail.com</a>
+      </p>
+      <p class="foot-meta">&copy; <span id="year"></span> Jantarang Pathdoot &middot; सर्वाधिकार सुरक्षित</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
