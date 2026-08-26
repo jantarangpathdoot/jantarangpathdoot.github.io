@@ -7,3 +7,6 @@ Thumbs.db
 *.local
 .vscode/
 .idea/
+
+# local preview samples - never publish these
+epapers/_sample-*.pdf
