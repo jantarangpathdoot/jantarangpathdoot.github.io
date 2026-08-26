@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root {
+    --ink:#14120e; --ink-2:#3d382f; --ink-3:#6d675b;
+    --rule:#d8d1c2; --paper:#faf7f0; --paper-2:#fff;
+    --accent:#b3121a; --accent-dk:#8d0e15; --accent-soft:#fdf0f0;
+    --ok:#1a7f4b; --ok-soft:#eaf7f0;
+    --f: "Poppins", "Nirmala UI", -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; padding:24px 16px 48px; background:var(--paper); color:var(--ink);
+    font-family:var(--f); font-size:15px; line-height:1.6;
+  }
+  .wrap { max-width:640px; margin:0 auto; }
+
+  h1 { margin:0 0 4px; font-size:1.4rem; font-weight:700; }
+  .sub { margin:0 0 24px; color:var(--ink-3); font-size:.85rem; }
+  .sub a { color:var(--accent-dk); }
+
+  .card {
+    background:var(--paper-2); border:1px solid var(--rule);
+    border-radius:12px; padding:20px; margin-bottom:16px;
+  }
+
+  /* ---- drop zone ---- */
+  .drop {
+    border:2px dashed var(--rule); border-radius:12px;
+    padding:34px 20px; text-align:center; cursor:pointer;
+    background:var(--paper); transition:border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color:var(--accent); background:var(--accent-soft); }
+  .drop.has-file { border-style:solid; border-color:var(--ok); background:var(--ok-soft); }
+  .drop svg { width:34px; height:34px; fill:none; stroke:var(--ink-3); stroke-width:1.6;
+              stroke-linecap:round; stroke-linejoin:round; }
+  .drop.has-file svg { stroke:var(--ok); }
+  .drop-main { margin:10px 0 2px; font-weight:600; }
+  .drop-sub { margin:0; font-size:.8rem; color:var(--ink-3); }
+  #fileInput { display:none; }
+
+  /* ---- fields ---- */
+  .row { display:flex; gap:12px; align-items:flex-end; margin-top:18px; flex-wrap:wrap; }
+  .field { flex:1 1 180px; }
+  label { display:block; font-size:.78rem; font-weight:600; color:var(--ink-3); margin-bottom:5px; }
+  input[type=date] {
+    width:100%; height:42px; padding:0 12px; font-family:var(--f); font-size:.95rem;
+    border:1px solid var(--rule); border-radius:8px; background:var(--paper-2); color:var(--ink);
+  }
+
+  button {
+    height:42px; padding:0 22px; border:0; border-radius:8px; cursor:pointer;
+    font-family:var(--f); font-size:.92rem; font-weight:600;
+    background:var(--accent); color:#fff; transition:background .15s;
+  }
+  button:hover:not(:disabled) { background:var(--accent-dk); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-quiet {
+    background:transparent; color:var(--ink-3); border:1px solid var(--rule);
+    height:30px; padding:0 12px; font-size:.78rem; font-weight:500;
+  }
+  .btn-quiet:hover:not(:disabled) { background:var(--accent-soft); color:var(--accent-dk); border-color:var(--accent); }
+
+  /* ---- progress ---- */
+  .prog { margin-top:18px; display:none; }
+  .prog.show { display:block; }
+  .bar { height:8px; background:var(--rule); border-radius:99px; overflow:hidden; }
+  .bar span { display:block; height:100%; width:0; background:var(--accent);
+              border-radius:99px; transition:width .2s; }
+  .prog-label { margin:8px 0 0; font-size:.82rem; color:var(--ink-3); }
+
+  /* ---- messages ---- */
+  .msg { margin-top:16px; padding:14px 16px; border-radius:10px; font-size:.88rem; display:none; }
+  .msg.show { display:block; }
+  .msg.ok { background:var(--ok-soft); border:1px solid #bfe3cf; color:#14603a; }
+  .msg.err { background:var(--accent-soft); border:1px solid #f2d7d7; color:#8d0e15; }
+  .msg a { color:inherit; font-weight:600; }
+
+  /* ---- recent list ---- */
+  h2 { font-size:.95rem; font-weight:700; margin:0 0 12px; }
+  .ed { display:flex; align-items:center; justify-content:space-between; gap:10px;
+        padding:9px 0; border-bottom:1px solid var(--rule); font-size:.87rem; }
+  .ed:last-child { border-bottom:0; }
+  .ed-date { font-weight:600; }
+  .ed-size { color:var(--ink-3); font-size:.78rem; margin-left:8px; font-weight:400; }
+  .empty { color:var(--ink-3); font-size:.85rem; margin:0; }
+  .warn { background:#fff8e6; border:1px solid #f0dfae; color:#7a5c12;
+          padding:12px 14px; border-radius:10px; font-size:.85rem; margin-bottom:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>ePaper प्रकाशित करें</h1>
+  <p class="sub">जनतरंग पथदूत &middot; PDF चुनें, तिथि जाँचें, और प्रकाशित करें।</p>
+
+  <div id="tokenWarn" class="warn" style="display:none">
+    <strong>GITHUB_TOKEN सेट नहीं है।</strong> Project Settings → Script properties में
+    <code>GITHUB_TOKEN</code> जोड़ें, तभी प्रकाशन होगा।
+  </div>
+
+  <div class="card">
+    <div id="drop" class="drop" role="button" tabindex="0" aria-label="PDF चुनें">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+      </svg>
+      <p class="drop-main" id="dropMain">PDF यहाँ खींचें या क्लिक करें</p>
+      <p class="drop-sub" id="dropSub">केवल PDF फ़ाइल</p>
+    </div>
+    <input type="file" id="fileInput" accept="application/pdf,.pdf">
+
+    <div class="row">
+      <div class="field">
+        <label for="dateInput">अंक की तिथि / Edition date</label>
+        <input type="date" id="dateInput">
+      </div>
+      <button id="publishBtn" disabled>प्रकाशित करें</button>
+    </div>
+
+    <div class="prog" id="prog">
+      <div class="bar"><span id="barFill"></span></div>
+      <p class="prog-label" id="progLabel">तैयार…</p>
+    </div>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>साइट पर मौजूद ePaper</h2>
+    <div id="edList"><p class="empty">लोड हो रहा है…</p></div>
+  </div>
+
+  <p class="sub" id="footNote"></p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var HI_MONTHS = ['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून',
+                   'जुलाई','अगस्त','सितंबर','अक्तूबर','नवंबर','दिसंबर'];
+
+  var el = function (id) { return document.getElementById(id); };
+  var drop = el('drop'), fileInput = el('fileInput'), dateInput = el('dateInput');
+  var publishBtn = el('publishBtn'), prog = el('prog'), barFill = el('barFill');
+  var progLabel = el('progLabel'), msg = el('msg'), edList = el('edList');
+
+  var chosen = null;
+  var boot = null;
+  var busy = false;
+
+  /* ---------- helpers ---------- */
+
+  function mb(b) { return (b / 1048576).toFixed(1) + ' MB'; }
+
+  function hiDate(iso) {
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return Number(p[2]) + ' ' + HI_MONTHS[Number(p[1]) - 1] + ' ' + p[0];
+  }
+
+  function show(kind, html) {
+    msg.className = 'msg show ' + kind;
+    msg.innerHTML = html;
+  }
+  function clearMsg() { msg.className = 'msg'; msg.innerHTML = ''; }
+
+  function setProgress(pct, label) {
+    prog.classList.add('show');
+    barFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    progLabel.textContent = label;
+  }
+  function hideProgress() { prog.classList.remove('show'); barFill.style.width = '0'; }
+
+  function setBusy(b) {
+    busy = b;
+    publishBtn.disabled = b || !chosen;
+    publishBtn.textContent = b ? 'प्रकाशित हो रहा है…' : 'प्रकाशित करें';
+  }
+
+  /* ---------- file choosing ---------- */
+
+  function pick(file) {
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) {
+      show('err', 'केवल PDF फ़ाइल चुनें। (Please choose a PDF.)');
+      return;
+    }
+    chosen = file;
+    clearMsg();
+    drop.classList.add('has-file');
+    el('dropMain').textContent = file.name;
+    el('dropSub').textContent = mb(file.size) + ' — बदलने के लिए क्लिक करें';
+    publishBtn.disabled = busy;
+
+    // If the filename carries a date, trust it over today's date.
+    var m = file.name.match(/(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})/);
+    if (m) {
+      dateInput.value = m[1] + '-' + m[2] + '-' + m[3];
+    } else {
+      m = file.name.match(/(\d{2})[-_.]?(\d{2})[-_.]?(20\d{2})/);
+      if (m) dateInput.value = m[3] + '-' + m[2] + '-' + m[1];
+    }
+  }
+
+  drop.addEventListener('click', function () { fileInput.click(); });
+  drop.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener('change', function () { pick(fileInput.files[0]); });
+
+  ['dragenter', 'dragover'].forEach(function (t) {
+    drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave', 'drop'].forEach(function (t) {
+    drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function (e) {
+    if (e.dataTransfer && e.dataTransfer.files.length) pick(e.dataTransfer.files[0]);
+  });
+
+  /* ---------- upload ---------- */
+
+  // Resumable upload straight to Drive: no Apps Script payload limit, real progress.
+  function uploadToDrive(file, token, folderId, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var meta = { name: file.name, parents: [folderId], mimeType: 'application/pdf' };
+
+      var init = new XMLHttpRequest();
+      init.open('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true');
+      init.setRequestHeader('Authorization', 'Bearer ' + token);
+      init.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+
+      init.onload = function () {
+        if (init.status < 200 || init.status > 299) {
+          return reject(new Error('Drive init failed (' + init.status + ')'));
+        }
+        var location = init.getResponseHeader('Location');
+        if (!location) return reject(new Error('NO_LOCATION'));   // CORS hid it — use fallback
+
+        var put = new XMLHttpRequest();
+        put.open('PUT', location);
+        put.setRequestHeader('Content-Type', 'application/pdf');
+
+        put.upload.onprogress = function (e) {
+          if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        put.onload = function () {
+          if (put.status < 200 || put.status > 299) {
+            return reject(new Error('Drive upload failed (' + put.status + ')'));
+          }
+          try { resolve(JSON.parse(put.responseText).id); }
+          catch (err) { reject(new Error('Drive returned an unreadable response.')); }
+        };
+        put.onerror = function () { reject(new Error('NETWORK')); };
+        put.send(file);
+      };
+      init.onerror = function () { reject(new Error('NO_LOCATION')); };
+      init.send(JSON.stringify(meta));
+    });
+  }
+
+  // Fallback: send the file through Apps Script as base64.
+  function uploadViaScript(file, dateStr) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var b64 = String(reader.result).split(',')[1];
+        setProgress(70, 'सर्वर पर भेजा जा रहा है…');
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(function (e) { reject(new Error(e.message || String(e))); })
+          .publishFromBase64(b64, file.name, dateStr);
+      };
+      reader.onerror = function () { reject(new Error('फ़ाइल पढ़ी नहीं जा सकी।')); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function publishFromDrive(fileId, dateStr) {
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function (e) { reject(new Error(e.message || String(e))); })
+        .publishFromDrive(fileId, dateStr);
+    });
+  }
+
+  function getToken() {
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function (e) { reject(new Error(e.message || String(e))); })
+        .getUploadToken();
+    });
+  }
+
+  publishBtn.addEventListener('click', function () {
+    if (!chosen || busy) return;
+    var dateStr = dateInput.value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      show('err', 'कृपया अंक की तिथि चुनें। (Pick the edition date.)');
+      return;
+    }
+
+    clearMsg();
+    setBusy(true);
+    setProgress(2, 'Drive पर अपलोड हो रहा है…');
+
+    getToken()
+      .then(function (t) {
+        return uploadToDrive(chosen, t.token, t.folderId, function (pct) {
+          setProgress(Math.round(pct * 0.7), 'Drive पर अपलोड — ' + pct + '%');
+        });
+      })
+      .then(function (fileId) {
+        setProgress(75, 'GitHub पर प्रकाशित हो रहा है…');
+        return publishFromDrive(fileId, dateStr);
+      })
+      .catch(function (err) {
+        // Direct upload unavailable (CORS/network) — go through Apps Script instead.
+        if (err && (err.message === 'NO_LOCATION' || err.message === 'NETWORK')) {
+          setProgress(25, 'वैकल्पिक तरीके से भेजा जा रहा है…');
+          return uploadViaScript(chosen, dateStr);
+        }
+        throw err;
+      })
+      .then(function (res) {
+        setProgress(100, 'पूरा हुआ');
+        var when = hiDate(res.date);
+        show('ok',
+          '<strong>' + (res.replaced ? 'बदल दिया गया' : 'प्रकाशित हो गया') + ' — ' + when + '</strong><br>' +
+          'साइट पर आने में लगभग एक मिनट लगेगा। ' +
+          '<a href="' + (res.siteUrl || boot.siteUrl) + '" target="_blank" rel="noopener">साइट खोलें →</a>');
+        renderEditions(res.editions);
+        resetPicker();
+        setTimeout(hideProgress, 1500);
+      })
+      .catch(function (err) {
+        hideProgress();
+        show('err', '<strong>प्रकाशित नहीं हो सका।</strong><br>' +
+                    String(err.message || err).replace(/</g, '&lt;'));
+      })
+      .then(function () { setBusy(false); });
+  });
+
+  function resetPicker() {
+    chosen = null;
+    fileInput.value = '';
+    drop.classList.remove('has-file');
+    el('dropMain').textContent = 'PDF यहाँ खींचें या क्लिक करें';
+    el('dropSub').textContent = 'केवल PDF फ़ाइल';
+    publishBtn.disabled = true;
+  }
+
+  /* ---------- recent editions ---------- */
+
+  function renderEditions(list) {
+    edList.innerHTML = '';
+    if (!list || !list.length) {
+      edList.innerHTML = '<p class="empty">अभी कोई ePaper साइट पर नहीं है।</p>';
+      return;
+    }
+    list.forEach(function (e) {
+      var row = document.createElement('div');
+      row.className = 'ed';
+
+      var left = document.createElement('div');
+      left.innerHTML = '<span class="ed-date">' + hiDate(e.date) + '</span>' +
+                       '<span class="ed-size">' + (e.size ? mb(e.size) : '') + '</span>';
+
+      var btn = document.createElement('button');
+      btn.className = 'btn-quiet';
+      btn.textContent = 'हटाएँ';
+      btn.title = 'साइट से हटाएँ (Drive में सुरक्षित रहेगा)';
+      btn.addEventListener('click', function () {
+        if (!confirm(hiDate(e.date) + ' का ePaper साइट से हटाना है?\nDrive में यह सुरक्षित रहेगा।')) return;
+        btn.disabled = true; btn.textContent = 'हट रहा है…';
+        google.script.run
+          .withSuccessHandler(function (res) { renderEditions(res.editions); show('ok', hiDate(res.date) + ' का ePaper साइट से हटा दिया गया।'); })
+          .withFailureHandler(function (err) { btn.disabled = false; btn.textContent = 'हटाएँ'; show('err', String(err.message || err)); })
+          .unpublish(e.date);
+      });
+
+      row.appendChild(left);
+      row.appendChild(btn);
+      edList.appendChild(row);
+    });
+  }
+
+  /* ---------- boot ---------- */
+
+  google.script.run
+    .withSuccessHandler(function (b) {
+      boot = b;
+      dateInput.value = b.today;
+      dateInput.max = b.today;
+      if (!b.tokenSet) el('tokenWarn').style.display = 'block';
+      if (b.error) show('err', 'सूची पढ़ी नहीं जा सकी: ' + b.error);
+      renderEditions(b.editions);
+      el('footNote').innerHTML =
+        'रिपॉज़िटरी <code>' + b.repo + '</code> &middot; साइट पर ' + b.retention +
+        ' दिन के ePaper रहते हैं, Drive में सभी सुरक्षित।';
+    })
+    .withFailureHandler(function (err) {
+      show('err', 'पेज लोड नहीं हो सका: ' + String(err.message || err));
+    })
+    .getBootstrap();
+})();
+</script>
+</body>
+</html>

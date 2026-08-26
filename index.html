@@ -26,9 +26,9 @@
 <meta name="twitter:description" content="हिंदी दैनिक समाचार पत्र का आज का ई-पेपर ऑनलाइन पढ़ें।">
 <meta name="twitter:image" content="https://jantarangpathdoot.github.io/assets/logo-jp.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Fonts are self-hosted (see assets/fonts) — no third-party origins on this page. -->
+<link rel="preload" href="assets/fonts/poppins-devanagari-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/poppins-devanagari-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css">
 
 <script type="application/ld+json">
@@ -293,7 +293,7 @@
   </div>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="assets/app.js"></script>
+<script src="assets/pdfjs/pdf.min.js" defer></script>
+<script src="assets/app.js" defer></script>
 </body>
 </html>

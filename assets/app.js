@@ -8,6 +8,7 @@
   var PDFJS_VERSION = '3.11.174';
   var MANIFEST_URL  = 'data/editions.json';
   var PAGE_SIZE     = 12;          // archive cards per "page"
+  var THUMB_CONCURRENCY = 2;       // simultaneous thumbnail renders
   var ZOOM_STEPS    = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
   var MAX_DPR       = 2;
 
@@ -19,8 +20,7 @@
     showFatal('PDF viewer लोड नहीं हो सका।', 'Could not load the PDF library. Please check your connection and refresh.');
     return;
   }
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/' + PDFJS_VERSION + '/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'assets/pdfjs/pdf.worker.min.js';
 
   /* ---------------- DOM ---------------- */
   var $ = function (id) { return document.getElementById(id); };
@@ -239,7 +239,7 @@
       .then(function (doc) {
         pdfDoc = doc;
         syncControls();
-        return renderPage(1);
+        return renderPage(1).then(unlockThumbs);
       })
       .catch(function (err) {
         console.error('[epaper] could not open PDF', err);
@@ -248,6 +248,7 @@
           'This edition could not be opened. Try refreshing, or download the PDF directly.',
           false
         );
+        unlockThumbs();   // don't strand the archive because the main edition failed
       });
   }
 
@@ -323,12 +324,57 @@
     thumb.appendChild(box);
   }
 
+  /* Thumbnails are the expensive part of this page: naively, every card opens
+     its own PDF.js document and spawns its own worker. Instead they share one
+     worker, run at most THUMB_CONCURRENCY at a time, and only start once the
+     main edition has finished rendering. */
+  var thumbQueue = [];
+  var thumbActive = 0;
+  var thumbsUnlocked = false;
+  var sharedWorker = null;
+
+  function getSharedWorker() {
+    if (!sharedWorker && pdfjsLib.PDFWorker) {
+      try { sharedWorker = new pdfjsLib.PDFWorker({ name: 'jp-thumbs' }); }
+      catch (e) { sharedWorker = null; }
+    }
+    return sharedWorker;
+  }
+
+  function queueThumb(thumb) {
+    if (!thumb || thumb._queued) return;
+    thumb._queued = true;
+    thumbQueue.push(thumb);
+    pumpThumbs();
+  }
+
+  function unlockThumbs() {
+    if (thumbsUnlocked) return;
+    thumbsUnlocked = true;
+    pumpThumbs();
+  }
+
+  function pumpThumbs() {
+    if (!thumbsUnlocked) return;
+    while (thumbActive < THUMB_CONCURRENCY && thumbQueue.length) {
+      thumbActive++;
+      renderThumb(thumbQueue.shift()).then(function () {
+        thumbActive--;
+        pumpThumbs();
+      });
+    }
+  }
+
   function renderThumb(thumb) {
-    var ed = thumb._edition;
-    if (!ed || thumb._done) return;
+    var ed = thumb && thumb._edition;
+    if (!ed || thumb._done) return Promise.resolve();
     thumb._done = true;
 
-    pdfjsLib.getDocument({ url: ed.file, disableAutoFetch: true, disableStream: false })
+    var opts = { url: ed.file, disableAutoFetch: true, disableStream: false };
+    var w = getSharedWorker();
+    if (w) opts.worker = w;
+
+    return pdfjsLib.getDocument(opts)
       .promise
       .then(function (doc) {
         return doc.getPage(1).then(function (page) {
@@ -363,7 +409,7 @@
       entries.forEach(function (en) {
         if (en.isIntersecting) {
           obs.unobserve(en.target);
-          renderThumb(en.target);
+          queueThumb(en.target);
         }
       });
     }, { rootMargin: '300px 0px' });
@@ -449,6 +495,7 @@
     els.stamp.textContent = HI_DAYS[t.getDay()] + ', ' + t.getDate() + ' ' + HI_MONTHS[t.getMonth()] + ' ' + t.getFullYear();
 
     thumbObserver = setupObserver();
+    setTimeout(unlockThumbs, 3000);   // backstop if the main edition stalls
     bind();
     syncControls();
 
@@ -466,9 +513,9 @@
         renderGrid(true);
 
         if (!thumbObserver) {
-          // no IntersectionObserver: render thumbs eagerly
+          // no IntersectionObserver: queue them all, the pump still throttles
           var thumbs = els.grid.querySelectorAll('.card-thumb');
-          for (var i = 0; i < thumbs.length; i++) renderThumb(thumbs[i]);
+          for (var i = 0; i < thumbs.length; i++) queueThumb(thumbs[i]);
         }
 
         if (editions.length) {
