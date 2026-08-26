@@ -15,8 +15,9 @@
   --accent-dk:  #8d0e15;
   --accent-soft:#fdf0f0;
 
-  --hi: "Noto Serif Devanagari", "Nirmala UI", serif;
-  --en: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Poppins carries both Devanagari and Latin, so one family across the site. */
+  --hi: "Poppins", "Nirmala UI", "Noto Sans Devanagari", sans-serif;
+  --en: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   --wrap: 1180px;
   --r: 10px;
@@ -460,6 +461,12 @@ a { color: var(--accent-dk); }
   gap: 20px; flex-wrap: wrap;
 }
 .foot-mark { margin: 0; font-family: var(--hi); font-size: 1.3rem; font-weight: 700; color: #fff; }
+.foot-ep {
+  font-size: .62em; font-weight: 600; letter-spacing: .08em;
+  color: #14120e; background: #e8e2d6;
+  padding: 2px 8px; border-radius: 999px;
+  vertical-align: middle; margin-left: 6px;
+}
 .foot-slogan { margin: 2px 0 0; font-family: var(--hi); font-size: .85rem; color: #a9a396; }
 .foot-right { text-align: right; }
 .foot-meta { margin: 0 0 3px; font-family: var(--hi); font-size: .8rem; line-height: 1.7; }

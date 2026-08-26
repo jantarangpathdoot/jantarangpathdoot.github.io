@@ -217,8 +217,11 @@
     if (!ed) return;
     current = ed;
 
-    els.title.textContent = isToday(ed.date) ? 'आज का अंक' : 'अंक';
+    els.title.textContent = isToday(ed.date) ? 'आज का ePaper' : 'ePaper';
     els.date.textContent = hiDate(ed.date, true) + '  ·  ' + enDate(ed.date);
+
+    document.title = (isToday(ed.date) ? 'आज का ePaper' : hiDate(ed.date, false) + ' का ePaper') +
+                     ' — जनतरंग पथदूत | Jantarang Pathdoot ePaper';
     els.download.href = ed.file;
     els.download.setAttribute('download', 'Jantarang-Pathdoot-' + ed.date + '.pdf');
     els.download.removeAttribute('aria-disabled');
@@ -241,7 +244,7 @@
       .catch(function (err) {
         console.error('[epaper] could not open PDF', err);
         setStatus(
-          'यह अंक खोला नहीं जा सका। कृपया कुछ देर बाद पुनः प्रयास करें।',
+          'यह ePaper खोला नहीं जा सका। कृपया कुछ देर बाद पुनः प्रयास करें।',
           'This edition could not be opened. Try refreshing, or download the PDF directly.',
           false
         );
@@ -268,7 +271,7 @@
     card.dataset.date = ed.date;
     card.dataset.file = ed.file;
     card.setAttribute('role', 'listitem');
-    card.setAttribute('aria-label', 'अंक ' + hiDate(ed.date, false) + ' खोलें');
+    card.setAttribute('aria-label', 'ePaper ' + hiDate(ed.date, false) + ' खोलें');
 
     var thumb = document.createElement('div');
     thumb.className = 'card-thumb';
@@ -373,7 +376,7 @@
       els.grid.innerHTML = '';
       var empty = document.createElement('p');
       empty.className = 'grid-empty';
-      empty.textContent = 'अभी कोई अंक प्रकाशित नहीं हुआ है। No editions published yet.';
+      empty.textContent = 'अभी कोई ePaper प्रकाशित नहीं हुआ है। No ePaper published yet.';
       els.grid.appendChild(empty);
       els.loadMore.hidden = true;
       return;
@@ -471,12 +474,12 @@
         if (editions.length) {
           loadEdition(editions[0]);
         } else {
-          els.title.textContent = 'कोई अंक उपलब्ध नहीं';
+          els.title.textContent = 'कोई ePaper उपलब्ध नहीं';
           els.date.textContent = 'No edition published yet';
           els.download.setAttribute('aria-disabled', 'true');
           els.download.removeAttribute('href');
           setStatus(
-            'अभी कोई अंक प्रकाशित नहीं हुआ है।',
+            'अभी कोई ePaper प्रकाशित नहीं हुआ है।',
             'No edition has been published yet. The latest edition will appear here automatically once uploaded.',
             false
           );
@@ -492,7 +495,7 @@
         els.grid.innerHTML = '';
         var p = document.createElement('p');
         p.className = 'grid-empty';
-        p.textContent = 'सूची लोड नहीं हो सकी। Could not load editions.';
+        p.textContent = 'सूची लोड नहीं हो सकी। Could not load the ePaper list.';
         els.grid.appendChild(p);
       });
   }
