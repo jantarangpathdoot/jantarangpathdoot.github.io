@@ -5,7 +5,7 @@
 | Piece | State |
 |---|---|
 | Live site | ✅ <https://jantarangpathdoot.github.io> |
-| Apps Script project *Jantarang ePaper* | ✅ created, 5 files pushed |
+| Apps Script project *Jantarang ePaper* | ✅ created, 4 files pushed |
 | Upload page (web app) | ✅ deployed, private to your account |
 | `GITHUB_TOKEN` script property | ⛔ **step 3 — you must add this** |
 | Authorisation + 15-min trigger | ⛔ **step 4 — run `setUp()` once** |
@@ -54,9 +54,12 @@ removes an edition from the site in one click. Deployed in step 5.
 > `addFileUploadItem()` is not among them, and the Forms REST API has the same
 > gap. That one question has to be added by hand — everything around it is scripted.
 
-In the script editor, run **`createUploadForm()`**. It creates the form, titles and
-describes it in Hindi, files it into the ePaper Drive folder, and then logs the
-exact clicks for the one remaining question (**View → Logs**):
+`FormSetup.gs` (in `apps-script-optional/`) has a `createUploadForm()` helper, but
+it is **not** pushed to the project: it needs the restricted `auth/forms` scope,
+which breaks the authorisation screen on an unverified script. Add it back only
+if you decide you want a Form, and be ready for the consent screen to complain.
+
+To make the Form by hand instead — <https://forms.new>, then:
 
 - Add a question titled `आज का ePaper (PDF)`
 - Set its type to **File upload** → **Continue** on Google's warning
@@ -118,7 +121,7 @@ there is no API for script properties.
 
 In the editor, pick the function **`setUp`** from the dropdown → **Run**.
 
-Google will ask for permission (Drive, Forms, external requests). It will warn
+Google will ask for permission (Drive, external requests, triggers). It will warn
 "Google hasn't verified this app" — expected for your own script:
 **Advanced** → **Go to Jantarang ePaper (unsafe)** → **Allow**.
 
