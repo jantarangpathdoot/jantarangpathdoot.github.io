@@ -1,8 +1,25 @@
 # Setup — one time only
 
-The website is already live. This file is the checklist for wiring up the
-upload engine (**upload page and/or Google Form ➜ Drive ➜ GitHub**), plus the
-security steps.
+## Where things stand
+
+| Piece | State |
+|---|---|
+| Live site | ✅ <https://jantarangpathdoot.github.io> |
+| Apps Script project *Jantarang ePaper* | ✅ created, 5 files pushed |
+| Upload page (web app) | ✅ deployed, private to your account |
+| `GITHUB_TOKEN` script property | ⛔ **step 3 — you must add this** |
+| Authorisation + 15-min trigger | ⛔ **step 4 — run `setUp()` once** |
+| Google Form | optional — step 1 |
+
+### Your links
+
+**📤 Upload page** — bookmark this, it's the one you use daily:
+<https://script.google.com/macros/s/AKfycbw90vPHy7v8UxILxZqZ4YWdPzN2wILxmuLNW1CrmaENwOFjSH8heYdZ2b-OnI1tNrGe7w/exec>
+
+**⚙️ Script editor:**
+<https://script.google.com/d/1xHnflg6zqeXUKpuO9K1g988KeQmcNyfNlrFq_QCDj5yL59w6hnCZKuQi/edit>
+
+> Nothing publishes until steps 3 and 4 are done.
 
 ---
 
@@ -30,13 +47,25 @@ with your own Google account — so you can simply reset the secret and leave it
 the PDF, confirm the date, and hit publish. Progress bar, replaces a wrong file,
 removes an edition from the site in one click. Deployed in step 5.
 
-**Route B — a Google Form.** Handy from a phone. Create a Form with a single
-**File upload** question:
+**Route B — a Google Form.** Handy from a phone.
 
-- Question: `आज का ePaper (PDF अपलोड करें)`
-- Type: **File upload** → allow **PDF only**, max **1 file**, size limit **100 MB**
-- In the Form's settings, set the upload destination folder — Google creates a
-  `… (File responses)` folder inside your Drive folder.
+> **Why this one can't be fully automated:** a **file upload** question cannot be
+> created by any API. Apps Script's `Form` class has 17 `add*Item()` methods and
+> `addFileUploadItem()` is not among them, and the Forms REST API has the same
+> gap. That one question has to be added by hand — everything around it is scripted.
+
+In the script editor, run **`createUploadForm()`**. It creates the form, titles and
+describes it in Hindi, files it into the ePaper Drive folder, and then logs the
+exact clicks for the one remaining question (**View → Logs**):
+
+- Add a question titled `आज का ePaper (PDF)`
+- Set its type to **File upload** → **Continue** on Google's warning
+- Allow only **PDF**, max **1 file**, max size **100 MB**, mark it **Required**
+- Google creates a `… (File responses)` folder — **move it into the ePaper folder**
+
+Then **Send** in the form gives you the link you fill in daily. Optionally run
+`attachFormTrigger('<formId>')` to publish the instant you submit, instead of
+waiting up to 15 minutes.
 
 > Name the PDF with the date if you can — `26-08-2026.pdf` or `2026-08-26.pdf`.
 > The script reads the date from the filename. If there's no date in the name it
@@ -48,46 +77,57 @@ Drive folder in use: <https://drive.google.com/drive/folders/1-fZ1mgUNIcjjdwlTQu
 
 ---
 
-## 2. Create the Apps Script project
+## 2. The Apps Script project — already done ✅
 
-1. Go to <https://script.google.com> → **New project** → name it `Jantarang ePaper`.
-2. Delete the sample code in `Code.gs`, paste in
-   [`apps-script/Code.gs`](apps-script/Code.gs).
-3. **+ → Script** → name it `Upload` → paste in
-   [`apps-script/Upload.gs`](apps-script/Upload.gs).
-4. **+ → HTML** → name it `Upload` (exactly, no `.html`) → paste in
-   [`apps-script/Upload.html`](apps-script/Upload.html).
-5. ⚙️ **Project Settings** → tick **Show `appsscript.json` manifest file**, then
-   open `appsscript.json` in the editor and replace it with
-   [`apps-script/appsscript.json`](apps-script/appsscript.json).
+Created and pushed with `clasp`. Five files are live in the project:
 
-You should end up with four files: `Code.gs`, `Upload.gs`, `Upload.html`,
-`appsscript.json`.
+| File | What it does |
+|---|---|
+| `Code.gs` | timed Drive ➜ GitHub sync + 30-day retention |
+| `UploadServer.gs` | upload page back end (publish / replace / unpublish) |
+| `Upload.html` | upload page UI |
+| `FormSetup.gs` | `createUploadForm()`, `attachFormTrigger()` |
+| `appsscript.json` | manifest — scopes, timezone, web app config |
+
+> `UploadServer.gs` is named that, not `Upload.gs`, because Apps Script requires
+> unique base names across file types and `Upload.html` already claims `Upload`.
+
+To change the code later, edit the files in `apps-script/` and run
+`npx clasp push` from the repo root, then
+`npx clasp redeploy AKfycbw90vPHy7v8UxILxZqZ4YWdPzN2wILxmuLNW1CrmaENwOFjSH8heYdZ2b-OnI1tNrGe7w`
+so the deployed URL picks up the change. Editing in the browser works too — run
+`npx clasp pull` afterwards to bring changes back into the repo.
 
 ---
 
-## 3. Add the GitHub token
+## 3. Add the GitHub token ⛔ you must do this
 
-**Project Settings** → **Script properties** → **Add script property**
+Open the [script editor](https://script.google.com/d/1xHnflg6zqeXUKpuO9K1g988KeQmcNyfNlrFq_QCDj5yL59w6hnCZKuQi/edit)
+→ ⚙️ **Project Settings** → scroll to **Script properties** → **Add script property**
 
 | Property | Value |
 |---|---|
 | `GITHUB_TOKEN` | your new `repo`-scoped token from step 0 |
 
-Script properties are private to the project — the token never enters the repo.
+Script properties are private to the project — the token never enters the repo,
+and never reaches the browser. This is the only step I could not do for you:
+there is no API for script properties.
 
 ---
 
-## 4. Authorise and start it
+## 4. Authorise and start it ⛔ you must do this
 
 In the editor, pick the function **`setUp`** from the dropdown → **Run**.
 
-Google will ask for permission (Drive + external requests). It will warn
-"Google hasn't verified this app" — that's expected for your own script:
-**Advanced** → **Go to Jantarang ePaper Sync (unsafe)** → **Allow**.
+Google will ask for permission (Drive, Forms, external requests). It will warn
+"Google hasn't verified this app" — expected for your own script:
+**Advanced** → **Go to Jantarang ePaper (unsafe)** → **Allow**.
 
 `setUp` installs a trigger that runs every **15 minutes** and does one sync
 immediately. Check **Executions** in the left sidebar to see it run.
+
+Granting Drive access needs a human at a consent screen, so this one can't be
+scripted either.
 
 ### Optional: publish the instant a form is submitted
 
@@ -100,25 +140,19 @@ Keep the 15-minute timer as well — it's the safety net if a form trigger misfi
 
 ---
 
-## 5. Deploy the upload page
+## 5. The upload page — already deployed ✅
 
-**Deploy** (top right) → **New deployment** → gear icon → **Web app**
+<https://script.google.com/macros/s/AKfycbw90vPHy7v8UxILxZqZ4YWdPzN2wILxmuLNW1CrmaENwOFjSH8heYdZ2b-OnI1tNrGe7w/exec>
 
-| Field | Value |
-|---|---|
-| Description | `ePaper upload` |
-| Execute as | **Me** |
-| Who has access | **Only myself** |
+Deployed as **Execute as: Me**, **Who has access: Only myself**. Bookmark it, or
+add it to your phone's home screen.
 
-Hit **Deploy**, then copy the **Web app URL** — that's your upload page.
-Bookmark it, or add it to your phone's home screen.
+> "Only myself" means the page opens only when you're signed in as
+> `jantarangpathdoot@gmail.com`. Anyone else gets a Google sign-in wall. No GitHub
+> token ever touches the browser — the push happens server-side in Apps Script.
 
-> "Only myself" means the page is reachable only when signed in as the account
-> that owns the script. Nobody else can open it, and no GitHub token ever
-> touches the browser — the push happens server-side inside Apps Script.
-
-**After editing any script file, you must re-deploy** for the page to change:
-**Deploy → Manage deployments → ✏️ edit → Version: New version → Deploy.**
+The URL is stable: `clasp redeploy` on the same deployment id keeps it, so it
+won't change when the code is updated.
 
 ### Using it
 

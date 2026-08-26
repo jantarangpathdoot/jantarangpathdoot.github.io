@@ -46,8 +46,9 @@ assets/pdfjs/           PDF.js 3.11.174 library + worker — self-hosted
 data/editions.json      Manifest — written by the sync script
 epapers/                Published PDFs (last 30 days only)
 apps-script/Code.gs     Timed Drive ➜ GitHub sync + 30-day retention
-apps-script/Upload.gs   Upload page back end (publish, replace, unpublish)
-apps-script/Upload.html Upload page UI
+apps-script/UploadServer.gs  Upload page back end (publish, replace, unpublish)
+apps-script/Upload.html      Upload page UI
+apps-script/FormSetup.gs     Google Form helper (createUploadForm)
 apps-script/appsscript.json
 .nojekyll               Serve files as-is, no Jekyll processing
 ```
