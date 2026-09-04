@@ -11,8 +11,15 @@
   // Decoding a newspaper page is heavy. One at a time on a phone keeps the
   // main thread free enough for the page to stay scrollable while they load.
   var THUMB_CONCURRENCY = (typeof window !== 'undefined' && window.innerWidth <= 720) ? 1 : 2;
-  var ZOOM_STEPS    = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
+  var ZOOM_STEPS    = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5];
   var MAX_DPR       = 2;
+
+  /* A canvas past a certain size does not just get slow, it comes back blank —
+     iOS Safari caps total canvas area, and every engine caps dimensions. At 500%
+     on a high-DPI phone a broadsheet page clears those limits easily, so the
+     renderer trims device pixel ratio first, then scale, to stay inside. */
+  var MAX_CANVAS_PX  = 16777216;   // 4096^2, iOS Safari's practical ceiling
+  var MAX_CANVAS_DIM = 8192;
 
   var HI_MONTHS = ['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून',
                    'जुलाई','अगस्त','सितंबर','अक्तूबर','नवंबर','दिसंबर'];
@@ -118,6 +125,10 @@
 
   /* ---------------- Viewer ---------------- */
 
+  function withinCanvasBudget(w, h) {
+    return w * h <= MAX_CANVAS_PX && w <= MAX_CANVAS_DIM && h <= MAX_CANVAS_DIM;
+  }
+
   function computeScale(page) {
     var base = page.getViewport({ scale: 1 });
     if (zoomMode === 'fit') {
@@ -173,10 +184,32 @@
     return pdfDoc.getPage(n).then(function (page) {
       if (token !== renderToken) return;
 
-      var scale = computeScale(page);
-      var vp = page.getViewport({ scale: scale });
+      var base = page.getViewport({ scale: 1 });
+
+      /* Display size and raster resolution are decided separately. The page is
+         laid out at the full requested zoom, so 500% really is 500% on screen;
+         only the pixel grid behind it is capped. Past that cap the browser
+         upscales, which costs sharpness rather than magnification — if these
+         were one number, every zoom beyond the cap would do nothing at all. */
+      var cssScale = computeScale(page);
+      var vpCss = page.getViewport({ scale: cssScale });
+      var cssW = Math.floor(vpCss.width), cssH = Math.floor(vpCss.height);
+
+      var rasterScale = cssScale;
       var dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      var cssW = Math.floor(vp.width), cssH = Math.floor(vp.height);
+
+      // Spend device pixel ratio first — it is the least visible loss.
+      while (dpr > 1 &&
+             !withinCanvasBudget(base.width * rasterScale * dpr, base.height * rasterScale * dpr)) {
+        dpr = Math.max(1, dpr - 0.5);
+      }
+      var guard = 0;
+      while (rasterScale > 0.05 && guard++ < 60 &&
+             !withinCanvasBudget(base.width * rasterScale * dpr, base.height * rasterScale * dpr)) {
+        rasterScale *= 0.9;
+      }
+
+      var vp = page.getViewport({ scale: rasterScale });
 
       offscreen.width  = Math.floor(vp.width  * dpr);
       offscreen.height = Math.floor(vp.height * dpr);
