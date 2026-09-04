@@ -32,7 +32,7 @@
     prev: $('prevPage'), next: $('nextPage'), pageInput: $('pageInput'), pageCount: $('pageCount'),
     edgePrev: $('edgePrev'), edgeNext: $('edgeNext'),
     zoomIn: $('zoomIn'), zoomOut: $('zoomOut'), zoomLabel: $('zoomLabel'), fitWidth: $('fitWidth'),
-    fullscreen: $('fullscreen'),
+    fullscreen: $('fullscreen'), fsExit: $('fsExit'),
     grid: $('editionGrid'), loadMore: $('loadMore'),
     stamp: $('todayStamp'), year: $('year')
   };
@@ -435,6 +435,133 @@
     if (current) markActiveCard(current.date);
   }
 
+  /* ---------------- Fullscreen ---------------- */
+
+  /* iOS Safari only grants fullscreen to <video>, so requestFullscreen either
+     is missing or rejects. Rather than leave the button dead, fall back to
+     pinning the stage over the viewport with CSS. Either way the exit button
+     is on screen — the native path previously left a phone with no way out. */
+
+  function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement) ||
+           els.stage.classList.contains('pseudo-fs');
+  }
+
+  function pseudoOn() {
+    els.stage.classList.add('pseudo-fs');
+    document.body.classList.add('fs-lock');
+    setTimeout(function () { renderPage(pageNum); }, 60);
+  }
+
+  function pseudoOff() {
+    if (!els.stage.classList.contains('pseudo-fs')) return;
+    els.stage.classList.remove('pseudo-fs');
+    document.body.classList.remove('fs-lock');
+    setTimeout(function () { renderPage(pageNum); }, 60);
+  }
+
+  function openFullscreen() {
+    if (els.stage.requestFullscreen) {
+      var p;
+      try { p = els.stage.requestFullscreen(); } catch (e) { pseudoOn(); return; }
+      if (p && p.catch) p.catch(function () { pseudoOn(); });
+    } else if (els.stage.webkitRequestFullscreen) {
+      try { els.stage.webkitRequestFullscreen(); } catch (e) { pseudoOn(); }
+    } else {
+      pseudoOn();
+    }
+  }
+
+  function closeFullscreen() {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+    pseudoOff();
+  }
+
+  function toggleFullscreen() {
+    if (isFullscreen()) closeFullscreen(); else openFullscreen();
+  }
+
+  /* ---------------- Pinch to zoom ---------------- */
+
+  function clampZoom(z) {
+    return Math.max(ZOOM_STEPS[0], Math.min(ZOOM_STEPS[ZOOM_STEPS.length - 1], z));
+  }
+
+  /* Re-rendering the PDF on every touchmove is far too slow, so the gesture
+     drives a cheap CSS transform for live feedback and we re-render once at
+     the settled scale on release, which is what makes it look sharp again. */
+  function setupPinch() {
+    var pinching = false, startDist = 0, startZoom = 1, liveRatio = 1;
+
+    function spread(t) {
+      var dx = t[0].clientX - t[1].clientX;
+      var dy = t[0].clientY - t[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    els.scroll.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 2 || !pdfDoc) return;
+      pinching = true;
+      liveRatio = 1;
+      startDist = spread(e.touches);
+      startZoom = zoomMode === 'fit' ? 1 : zoomMode;
+
+      // Anchor the zoom on the midpoint between the fingers.
+      var r = els.canvas.getBoundingClientRect();
+      var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      els.canvas.style.transformOrigin =
+        (r.width ? ((mx - r.left) / r.width) * 100 : 50) + '% ' +
+        (r.height ? ((my - r.top) / r.height) * 100 : 50) + '%';
+    }, { passive: true });
+
+    els.scroll.addEventListener('touchmove', function (e) {
+      if (!pinching || e.touches.length !== 2 || !startDist) return;
+      e.preventDefault();                       // stop the browser zooming the page
+      var target = clampZoom(startZoom * (spread(e.touches) / startDist));
+      liveRatio = target / startZoom;
+      els.canvas.style.transform = 'scale(' + liveRatio + ')';
+    }, { passive: false });
+
+    function endPinch(e) {
+      if (!pinching) return;
+      if (e.touches && e.touches.length >= 2) return;   // still pinching
+      pinching = false;
+
+      els.canvas.style.transform = '';
+      els.canvas.style.transformOrigin = '';
+
+      var next = clampZoom(startZoom * liveRatio);
+      if (Math.abs(next - startZoom) < 0.02) return;    // treat as a stray touch
+
+      zoomMode = next;
+      syncControls();
+      renderPage(pageNum);
+    }
+
+    els.scroll.addEventListener('touchend', endPinch);
+    els.scroll.addEventListener('touchcancel', endPinch);
+
+    // Double-tap to toggle between fit and 2x, the gesture people expect.
+    var lastTap = 0;
+    els.scroll.addEventListener('touchend', function (e) {
+      if (pinching || (e.touches && e.touches.length)) return;
+      var now = new Date().getTime();
+      if (now - lastTap < 300 && now - lastTap > 0) {
+        zoomMode = (zoomMode === 'fit') ? 2 : 'fit';
+        syncControls();
+        renderPage(pageNum);
+        lastTap = 0;
+      } else {
+        lastTap = now;
+      }
+    });
+  }
+
   /* ---------------- Events ---------------- */
 
   function bind() {
@@ -454,16 +581,17 @@
       zoomMode = 'fit'; syncControls(); renderPage(pageNum);
     });
 
-    els.fullscreen.addEventListener('click', function () {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else if (els.stage.requestFullscreen) {
-        els.stage.requestFullscreen().catch(function (e) { console.warn('[epaper] fullscreen denied', e); });
-      }
-    });
+    els.fullscreen.addEventListener('click', toggleFullscreen);
+    if (els.fsExit) els.fsExit.addEventListener('click', closeFullscreen);
+
     document.addEventListener('fullscreenchange', function () {
       setTimeout(function () { renderPage(pageNum); }, 60);
     });
+    document.addEventListener('webkitfullscreenchange', function () {
+      setTimeout(function () { renderPage(pageNum); }, 60);
+    });
+
+    setupPinch();
 
     els.loadMore.addEventListener('click', function () { renderGrid(false); });
 
@@ -471,6 +599,10 @@
       var t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Native fullscreen handles its own Escape; the CSS fallback does not.
+      if (e.key === 'Escape' && els.stage.classList.contains('pseudo-fs')) {
+        e.preventDefault(); pseudoOff(); return;
+      }
       if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); goToPage(pageNum + 1); }
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goToPage(pageNum - 1); }
       else if (e.key === '+' || e.key === '=') { e.preventDefault(); stepZoom(1); }
