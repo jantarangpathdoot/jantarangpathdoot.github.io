@@ -280,12 +280,18 @@ a { color: var(--accent-dk); }
 
 .canvas-holder {
   min-height: 100%;
-  display: flex; align-items: flex-start; justify-content: center;
+  display: flex; align-items: flex-start;
+  /* NOT justify-content: center. A centred flex child that overflows puts the
+     overflow on BOTH sides, and the start-side overflow cannot be scrolled to —
+     the left edge of a zoomed page was unreachable. margin-inline:auto on the
+     canvas centres it when it fits and clips nothing when it does not. */
+  justify-content: flex-start;
   padding: 20px;
 }
 
 #pdfCanvas {
   display: block;
+  margin-inline: auto;           /* centres when it fits, never clips when it does not */
   max-width: none;               /* zoom controls width; scroll handles overflow */
   background: #fff;
   box-shadow: 0 4px 22px rgba(0,0,0,.35);
