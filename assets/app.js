@@ -8,7 +8,9 @@
   var PDFJS_VERSION = '3.11.174';
   var MANIFEST_URL  = 'data/editions.json';
   var PAGE_SIZE     = 12;          // archive cards per "page"
-  var THUMB_CONCURRENCY = 2;       // simultaneous thumbnail renders
+  // Decoding a newspaper page is heavy. One at a time on a phone keeps the
+  // main thread free enough for the page to stay scrollable while they load.
+  var THUMB_CONCURRENCY = (typeof window !== 'undefined' && window.innerWidth <= 720) ? 1 : 2;
   var ZOOM_STEPS    = [0.5, 0.65, 0.8, 1, 1.25, 1.5, 2, 2.5, 3];
   var MAX_DPR       = 2;
 
@@ -38,6 +40,10 @@
   };
 
   var ctx = els.canvas.getContext('2d', { alpha: false });
+
+  // Pages are rendered here first, then blitted across in one step.
+  var offscreen = document.createElement('canvas');
+  var offCtx = offscreen.getContext('2d', { alpha: false });
 
   /* ---------------- State ---------------- */
   var editions = [];
@@ -125,11 +131,44 @@
     return fit * zoomMode;
   }
 
-  function renderPage(n) {
-    if (!pdfDoc) return;
+  /* Where the reader is looking, as a fraction of the content, plus where that
+     point sits in the viewport. Captured before a re-render and restored after,
+     so zooming keeps your place instead of snapping back to the middle. */
+  function captureAnchor(vx, vy) {
+    var s = els.scroll;
+    if (vx === undefined) vx = s.clientWidth / 2;
+    if (vy === undefined) vy = s.clientHeight / 2;
+    return {
+      fx: (s.scrollLeft + vx) / (s.scrollWidth || 1),
+      fy: (s.scrollTop + vy) / (s.scrollHeight || 1),
+      vx: vx,
+      vy: vy
+    };
+  }
+
+  function restoreAnchor(a) {
+    if (!a) return;
+    var s = els.scroll;
+    s.scrollLeft = Math.max(0, a.fx * s.scrollWidth - a.vx);
+    s.scrollTop  = Math.max(0, a.fy * s.scrollHeight - a.vy);
+  }
+
+  /**
+   * @param n      page number
+   * @param anchor an object from captureAnchor to restore, null to leave the
+   *               scroll alone (page changes), or omitted to hold the centre.
+   *
+   * PDF.js paints into the canvas progressively, so rendering straight into the
+   * visible one made every zoom look like the paper was reloading column by
+   * column. We render off-screen and blit the finished image across in a single
+   * synchronous step, so the reader only ever sees the completed page.
+   */
+  function renderPage(n, anchor) {
+    if (!pdfDoc) return Promise.resolve();
     var token = ++renderToken;
 
     if (renderTask) { try { renderTask.cancel(); } catch (e) {} renderTask = null; }
+    if (anchor === undefined) anchor = captureAnchor();
 
     return pdfDoc.getPage(n).then(function (page) {
       if (token !== renderToken) return;
@@ -137,18 +176,16 @@
       var scale = computeScale(page);
       var vp = page.getViewport({ scale: scale });
       var dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      var cssW = Math.floor(vp.width), cssH = Math.floor(vp.height);
 
-      els.canvas.width  = Math.floor(vp.width  * dpr);
-      els.canvas.height = Math.floor(vp.height * dpr);
-      els.canvas.style.width  = Math.floor(vp.width)  + 'px';
-      els.canvas.style.height = Math.floor(vp.height) + 'px';
-
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, els.canvas.width, els.canvas.height);
+      offscreen.width  = Math.floor(vp.width  * dpr);
+      offscreen.height = Math.floor(vp.height * dpr);
+      offCtx.setTransform(1, 0, 0, 1, 0, 0);
+      offCtx.fillStyle = '#fff';
+      offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
 
       renderTask = page.render({
-        canvasContext: ctx,
+        canvasContext: offCtx,
         viewport: vp,
         transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
       });
@@ -156,6 +193,16 @@
       return renderTask.promise.then(function () {
         if (token !== renderToken) return;
         renderTask = null;
+
+        // Resize and blit together — the browser cannot paint between these.
+        els.canvas.width  = offscreen.width;
+        els.canvas.height = offscreen.height;
+        els.canvas.style.width  = cssW + 'px';
+        els.canvas.style.height = cssH + 'px';
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(offscreen, 0, 0);
+
+        restoreAnchor(anchor);
         hideStatus();
         syncControls();
       });
@@ -188,7 +235,8 @@
     pageNum = n;
     syncControls();
     els.scroll.scrollTop = 0;
-    renderPage(pageNum);
+    els.scroll.scrollLeft = 0;
+    renderPage(pageNum, null);   // a new page starts at the top, not where you were
   }
 
   function currentZoomValue(page1Fallback) {
@@ -236,7 +284,7 @@
       .then(function (doc) {
         pdfDoc = doc;
         syncControls();
-        return renderPage(1).then(unlockThumbs);
+        return renderPage(1, null).then(unlockThumbs);
       })
       .catch(function (err) {
         console.error('[epaper] could not open PDF', err);
@@ -338,9 +386,13 @@
     return sharedWorker;
   }
 
+  // Readers on Data Saver get the plain PDF card instead of a rendered page.
+  var SAVE_DATA = !!(navigator.connection && navigator.connection.saveData);
+
   function queueThumb(thumb) {
     if (!thumb || thumb._queued) return;
     thumb._queued = true;
+    if (SAVE_DATA) { thumb._done = true; thumbFallback(thumb); return; }
     thumbQueue.push(thumb);
     pumpThumbs();
   }
@@ -376,7 +428,10 @@
       .then(function (doc) {
         return doc.getPage(1).then(function (page) {
           var base = page.getViewport({ scale: 1 });
-          var targetW = 300;
+          // Cards are ~140px on a phone and ~178px on desktop. Rendering these
+          // at 300px was work nobody could see; a soft thumbnail is a fair
+          // trade for a page that scrolls smoothly.
+          var targetW = window.innerWidth <= 720 ? 130 : 190;
           var vp = page.getViewport({ scale: targetW / base.width });
           var c = document.createElement('canvas');
           c.width = Math.floor(vp.width);
@@ -495,7 +550,7 @@
      drives a cheap CSS transform for live feedback and we re-render once at
      the settled scale on release, which is what makes it look sharp again. */
   function setupPinch() {
-    var pinching = false, startDist = 0, startZoom = 1, liveRatio = 1;
+    var pinching = false, startDist = 0, startZoom = 1, liveRatio = 1, pinchAnchor = null;
 
     function spread(t) {
       var dx = t[0].clientX - t[1].clientX;
@@ -510,13 +565,19 @@
       startDist = spread(e.touches);
       startZoom = zoomMode === 'fit' ? 1 : zoomMode;
 
-      // Anchor the zoom on the midpoint between the fingers.
-      var r = els.canvas.getBoundingClientRect();
       var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
       var my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      // Scale visually about the finger midpoint...
+      var r = els.canvas.getBoundingClientRect();
       els.canvas.style.transformOrigin =
         (r.width ? ((mx - r.left) / r.width) * 100 : 50) + '% ' +
         (r.height ? ((my - r.top) / r.height) * 100 : 50) + '%';
+
+      // ...and remember that same spot so the re-render lands there too,
+      // rather than snapping the reader back to the middle of the page.
+      var sr = els.scroll.getBoundingClientRect();
+      pinchAnchor = captureAnchor(mx - sr.left, my - sr.top);
     }, { passive: true });
 
     els.scroll.addEventListener('touchmove', function (e) {
@@ -536,11 +597,12 @@
       els.canvas.style.transformOrigin = '';
 
       var next = clampZoom(startZoom * liveRatio);
-      if (Math.abs(next - startZoom) < 0.02) return;    // treat as a stray touch
+      if (Math.abs(next - startZoom) < 0.02) { pinchAnchor = null; return; }
 
       zoomMode = next;
       syncControls();
-      renderPage(pageNum);
+      renderPage(pageNum, pinchAnchor);
+      pinchAnchor = null;
     }
 
     els.scroll.addEventListener('touchend', endPinch);
