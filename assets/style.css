@@ -267,7 +267,13 @@ a { color: var(--accent-dk); }
 .canvas-scroll {
   height: min(78vh, 940px);
   overflow: auto;
-  overscroll-behavior: contain;
+  /* Chain the scroll to the page. `contain` trapped the reader inside the
+     viewer once the PDF hit its end — on a phone that reads as a frozen page. */
+  overscroll-behavior: auto;
+  /* Allow one-finger panning but hand two-finger gestures to our pinch handler
+     instead of the browser's page zoom. */
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch;
   display: block;
   scrollbar-width: thin;
 }
@@ -288,6 +294,8 @@ a { color: var(--accent-dk); }
 
 .stage:fullscreen { background: var(--stage-bg); }
 .stage:fullscreen .canvas-scroll { height: 100vh; }
+.stage:-webkit-full-screen { background: var(--stage-bg); }
+.stage:-webkit-full-screen .canvas-scroll { height: 100vh; }
 
 /* edge page buttons */
 .edge {
@@ -304,6 +312,47 @@ a { color: var(--accent-dk); }
 .edge-next { right: 0; border-radius: 8px 0 0 8px; }
 .stage:hover .edge, .edge:focus-visible { opacity: 1; }
 .edge:disabled { opacity: 0 !important; pointer-events: none; }
+
+/* Touch devices have no hover, so the page buttons were never reachable. */
+@media (hover: none) {
+  .edge { opacity: .72; }
+  .edge-prev { border-radius: 0 10px 10px 0; }
+  .edge-next { border-radius: 10px 0 0 10px; }
+}
+
+/* ---------------- Fullscreen ---------------- */
+
+/* iOS Safari refuses requestFullscreen on anything but <video>, so there is a
+   CSS fallback (.pseudo-fs) that pins the stage over the viewport. Both paths
+   show the same exit button — the native one left no way back on a phone. */
+.stage.pseudo-fs {
+  position: fixed; inset: 0; z-index: 200;
+  border-radius: 0; box-shadow: none;
+}
+.stage.pseudo-fs .canvas-scroll { height: 100vh; height: 100dvh; }
+body.fs-lock { overflow: hidden; }
+
+.fs-exit {
+  display: none;
+  position: absolute; top: 12px; right: 12px; z-index: 6;
+  align-items: center; gap: 7px;
+  height: 38px; padding: 0 15px;
+  background: rgba(20,18,14,.72); color: #fff;
+  border: 1px solid rgba(255,255,255,.22); border-radius: 999px;
+  font-family: var(--hi); font-size: .84rem; font-weight: 600; cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.fs-exit svg {
+  width: 16px; height: 16px; fill: none; stroke: currentColor;
+  stroke-width: 2.1; stroke-linecap: round;
+}
+.fs-exit:hover { background: var(--accent); border-color: var(--accent); }
+
+/* Separate rules on purpose: one selector list would be dropped whole by any
+   browser that does not recognise the other prefix. */
+.stage.pseudo-fs .fs-exit { display: inline-flex; }
+.stage:fullscreen .fs-exit { display: inline-flex; }
+.stage:-webkit-full-screen .fs-exit { display: inline-flex; }
 
 /* stage status / loading / empty */
 .stage-status {
